@@ -1,0 +1,271 @@
+/* src/assets/styles/main.css */
+
+/* ============================================= */
+/* ==      1. SISTEMA DE DISEÑO GLOBAL        == */
+/* ============================================= */
+:root {
+  --primary-color: #6d28d9; /* Morado principal */
+  --primary-hover: #5b21b6; /* Morado más oscuro para hover */
+  --secondary-color: #10b981; /* Verde para confirmaciones */
+  --dark-bg: #111827;      /* Fondo oscuro para paneles */
+  --light-bg: #f3f4f6;     /* Fondo claro general */
+  --text-light: #f9fafb;
+  --text-dark: #1f2937;
+  --border-color: #d1d5db;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--light-bg);
+  color: var(--text-dark);
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+}
+
+.btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+}
+
+/* ============================================= */
+/* ==       2. VISTA DE MESA (TABLETOP)       == */
+/* ============================================= */
+.tabletop-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.menu-item-card .price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin: 0.5rem 0 1rem;
+}
+
+.menu-item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.cart-summary {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 300px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+.cart-summary h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #4b5563;
+  padding-bottom: 0.5rem;
+}
+
+.cart-summary ul {
+  list-style: none;
+  padding: 0;
+}
+
+/* ============================================= */
+/* ==         3. VISTA DE BARRA               == */
+/* ============================================= */
+.bar-display-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.order-card {
+  border-left: 10px solid;
+}
+
+.order-card .order-item {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.order-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 10px;
+}
+
+.order-actions button {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  background-color: #555;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-actions button:hover {
+  background-color: #333;
+}
+
+/* Colores de estado para los pedidos en la barra */
+.status-recibido { border-color: #f59e0b; } /* Ámbar */
+.status-en-preparación { border-color: #3b82f6; } /* Azul */
+.status-listo { border-color: var(--secondary-color); } /* Verde */
+
+/* ============================================= */
+/* ==    4. PANEL DE ADMINISTRACIÓN (COMMAND) == */
+/* ============================================= */
+.command-container {
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.command-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #4b5563;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.menu-table {
+  width: 100%;
+  margin-top: 2rem;
+  border-collapse: collapse;
+}
+
+.menu-table th, .menu-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #374151;
+}
+
+.menu-table th {
+  background-color: #374151;
+}
+
+.menu-table tbody tr:hover {
+  background-color: #1f2937;
+}
+
+.actions-cell button {
+  margin-right: 10px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  background: #4b5563;
+  color: var(--text-light);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.actions-cell button:hover {
+  background-color: #6b7280;
+}
+
+.actions-cell button.delete {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.actions-cell button.delete:hover {
+  background-color: #ef4444;
+  color: var(--text-light);
+}
+
+/* ============================================= */
+/* ==      5. MODO DE CONTINGENCIA            == */
+/* ============================================= */
+.contingency-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+.contingency-header {
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+.contingency-header h1 {
+  color: var(--primary-color);
+}
+.contingency-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+.menu-list, .order-summary {
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.menu-item-contingency {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.menu-item-contingency button {
+  background-color: var(--secondary-color);
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border: none;
+  cursor: pointer;
+}
+.send-order-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+}
