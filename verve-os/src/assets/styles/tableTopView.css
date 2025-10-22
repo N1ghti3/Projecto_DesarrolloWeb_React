@@ -4,6 +4,9 @@
   margin: 2rem auto;
   padding: 1rem;
   text-align: center;
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+  min-height: 100vh;
 }
 
 .menu-grid {

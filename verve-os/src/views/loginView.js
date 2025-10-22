@@ -1,6 +1,7 @@
 // src/views/loginView.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import '../assets/styles/login.css';
 
 const LoginView = () => {
@@ -56,7 +57,7 @@ const LoginView = () => {
                 autoComplete="current-password"
               />
               <button type="button" className="toggle" onClick={() => setShowPwd(v => !v)}>
-                {showPwd ? 'Ocultar' : 'Ver'}
+                {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </label>
@@ -67,7 +68,7 @@ const LoginView = () => {
             {loading ? 'Verificando...' : 'Ingresar'}
           </button>
         </form>
-        <p className="helper">¿Olvidaste tu contraseña? <a href="#">Recupérala</a></p>
+        <p className="helper">¿Olvidaste tu contraseña? <button type="button" className="link-button">Recupérala</button></p>
       </div>
     </div>
   );

@@ -4,23 +4,29 @@ import { Link } from 'react-router-dom';
 
 const SelectView = () => {
   return (
-    <div style={{ textAlign: 'center', paddingTop: '50px' }}>
-      <h1>Bienvenido a VerveOS</h1>
-      <p style={{ marginBottom: '30px' }}>Selecciona una vista para continuar:</p>
-      <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-        <Link to="/table/1" style={{ textDecoration: 'none', color: '#6d28d9', fontWeight: 'bold' }}>
-          ➡️ Vista de Mesa (Ej: Mesa 1)
-        </Link>
-        <Link to="/command" style={{ textDecoration: 'none', color: '#6d28d9', fontWeight: 'bold' }}>
-          ➡️ Panel de Administración (Command)
-        </Link>
-        <Link to="/bar-display" style={{ textDecoration: 'none', color: '#6d28d9', fontWeight: 'bold' }}>
-          ➡️ Vista de Barra
-        </Link>
-        <Link to="/contingency" style={{ textDecoration: 'none', color: '#6d28d9', fontWeight: 'bold' }}>
-          ➡️ Modo de Contingencia Web
-        </Link>
-      </nav>
+    <div className="select-view-container">
+      <div className="select-view-content">
+        <h1>Bienvenido a VerveOS</h1>
+        <p className="select-subtitle">Selecciona una vista para continuar:</p>
+        <nav className="select-nav">
+          <Link to="/table/1" className="select-link card">
+            <span className="select-icon">🍽️</span>
+            <span className="select-text">Vista de Mesa (Ej: Mesa 1)</span>
+          </Link>
+          <Link to="/command" className="select-link card">
+            <span className="select-icon">⚙️</span>
+            <span className="select-text">Panel de Administración</span>
+          </Link>
+          <Link to="/bar-display" className="select-link card">
+            <span className="select-icon">🍸</span>
+            <span className="select-text">Vista de Barra</span>
+          </Link>
+          <Link to="/contingency" className="select-link card">
+            <span className="select-icon">🆘</span>
+            <span className="select-text">Modo de Contingencia Web</span>
+          </Link>
+        </nav>
+      </div>
     </div>
   );
 };
