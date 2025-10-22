@@ -1,5 +1,7 @@
 // src/views/ContingencyView.js
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import '../assets/styles/contingencyView.css';
 
 // Datos de ejemplo que, en un caso real, vendrían de una API
 const menuData = [
@@ -53,9 +55,12 @@ const ContingencyView = () => {
 
   return (
     <div className="contingency-container">
-      <header className="contingency-header">
-        <h1>VerveOS - Modo de Contingencia</h1>
-        <p>Toma de pedidos manual vía web.</p>
+      <header className="contingency-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <h1>VerveOS - Modo de Contingencia</h1>
+          <p>Toma de pedidos manual vía web.</p>
+        </div>
+        <Link className="btn" to="/select">Volver al inicio</Link>
       </header>
 
       <div className="table-selection">

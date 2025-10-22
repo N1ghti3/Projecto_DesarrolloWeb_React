@@ -1,0 +1,49 @@
+/* Estilos específicos para ContingencyView */
+.contingency-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+.contingency-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+.contingency-header h1 {
+  color: var(--primary-color);
+}
+.contingency-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+.menu-list, .order-summary {
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.menu-item-contingency {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.menu-item-contingency button {
+  background-color: var(--secondary-color);
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border: none;
+  cursor: pointer;
+}
+.send-order-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+}
