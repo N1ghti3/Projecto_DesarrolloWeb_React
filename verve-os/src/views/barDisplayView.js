@@ -1,6 +1,8 @@
 // src/views/barDisplayView.js
 import React, { useState, useEffect } from 'react';
-
+import initialOrders from '../assets/initialData/initialDataBarDisplayView.js';
+// Importa los estilos específicos para esta vista
+import './assets/styles/barDisplayView.css';
 const initialOrders = [
   { id: 101, table: 5, item: 'Margarita', status: 'recibido' },
   { id: 102, table: 2, item: 'Cerveza Club Colombia', status: 'recibido' },
