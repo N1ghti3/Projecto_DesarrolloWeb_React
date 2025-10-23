@@ -1,5 +1,6 @@
 // src/views/commandView.js
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const initialMenu = [
   { id: 1, name: 'Margarita', price: 12.50, stock: 50 },
@@ -23,7 +24,10 @@ const CommandView = () => {
     <div className="command-container">
       <header className="command-header">
         <h1>Panel de Administración</h1>
-        <button className="btn">Agregar Nuevo Producto</button>
+        <div style={{display:'flex', gap:'10px'}}>
+          <Link className="btn" to="/select">Volver al inicio</Link>
+          <button className="btn">Agregar Nuevo Producto</button>
+        </div>
       </header>
 
       <div className="command-content">

@@ -1,10 +1,9 @@
 // src/views/barDisplayView.js
-import React, { useState, useEffect } from 'react';
-
-const initialOrders = [
-  { id: 101, table: 5, item: 'Margarita', status: 'recibido' },
-  { id: 102, table: 2, item: 'Cerveza Club Colombia', status: 'recibido' },
-];
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import initialOrders from '../assets/initialData/initialDataBarDisplayView.js';
+// Importa los estilos específicos para esta vista
+import '../assets/styles/barDisplayView.css';
 
 const BarDisplayView = () => {
   const [orders, setOrders] = useState(initialOrders);
@@ -20,13 +19,16 @@ const BarDisplayView = () => {
 
   return (
     <div className="bar-display-container">
-      <h1>Órdenes Activas</h1>
+      <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+        <h1>Órdenes Activas</h1>
+        <Link className="btn" to="/select">Volver al inicio</Link>
+      </header>
       <div className="orders-list">
         {orders.map(order => (
-          <div key={order.id} className={`order-card card status-${order.status}`}>
+          <div key={order.id} className={`order-card card status-${String(order.status).replace(' ', '-')}`}>
             <h3>Mesa: {order.table}</h3>
             <p className="order-item">{order.item}</p>
-            <p className="order-status">Estado: <strong>{order.status.toUpperCase()}</strong></p>
+            <p className="order-status">Estado: <strong>{String(order.status).toUpperCase()}</strong></p>
             <div className="order-actions">
               <button onClick={() => handleUpdateStatus(order.id, 'en preparación')}>En Preparación</button>
               <button onClick={() => handleUpdateStatus(order.id, 'listo')}>Listo</button>

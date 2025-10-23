@@ -19,8 +19,8 @@
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--light-bg);
-  color: var(--text-dark);
+  background-color: var(--dark-bg);
+  color: var(--text-light);
 }
 
 .btn {
@@ -41,117 +41,12 @@ body {
 }
 
 .card {
-  background: white;
+  background: #1f2937;
+  border: 1px solid #374151;
   border-radius: 12px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
   padding: 1.5rem;
 }
-
-/* ============================================= */
-/* ==       2. VISTA DE MESA (TABLETOP)       == */
-/* ============================================= */
-.tabletop-container {
-  max-width: 1000px;
-  margin: 2rem auto;
-  padding: 1rem;
-  text-align: center;
-}
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-.menu-item-card .price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--primary-color);
-  margin: 0.5rem 0 1rem;
-}
-
-.menu-item-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.cart-summary {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: var(--dark-bg);
-  color: var(--text-light);
-  padding: 20px;
-  border-radius: 12px;
-  min-width: 300px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-  z-index: 1000;
-}
-
-.cart-summary h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #4b5563;
-  padding-bottom: 0.5rem;
-}
-
-.cart-summary ul {
-  list-style: none;
-  padding: 0;
-}
-
-/* ============================================= */
-/* ==         3. VISTA DE BARRA               == */
-/* ============================================= */
-.bar-display-container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 1rem;
-}
-
-.orders-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-.order-card {
-  border-left: 10px solid;
-}
-
-.order-card .order-item {
-  font-size: 1.2rem;
-  font-weight: 500;
-}
-
-.order-actions {
-  margin-top: 1rem;
-  display: flex;
-  gap: 10px;
-}
-
-.order-actions button {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  background-color: #555;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.order-actions button:hover {
-  background-color: #333;
-}
-
-/* Colores de estado para los pedidos en la barra */
-.status-recibido { border-color: #f59e0b; } /* Ámbar */
-.status-en-preparación { border-color: #3b82f6; } /* Azul */
-.status-listo { border-color: var(--secondary-color); } /* Verde */
 
 /* ============================================= */
 /* ==    4. PANEL DE ADMINISTRACIÓN (COMMAND) == */
@@ -218,54 +113,226 @@ body {
 }
 
 /* ============================================= */
-/* ==      5. MODO DE CONTINGENCIA            == */
+/* ==       5. CART COMPONENT STYLING         == */
 /* ============================================= */
-.contingency-container {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
+.cart-items-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-.contingency-header {
-  text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 15px;
-  margin-bottom: 20px;
-}
-.contingency-header h1 {
-  color: var(--primary-color);
-}
-.contingency-content {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-}
-.menu-list, .order-summary {
-  padding: 15px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-.menu-item-contingency {
+
+.cart-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #4b5563;
 }
-.menu-item-contingency button {
-  background-color: var(--secondary-color);
-  color: white;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  border: none;
-  cursor: pointer;
+
+.cart-item:last-child {
+  border-bottom: none;
 }
-.send-order-btn {
+
+.cart-item-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cart-item-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.cart-item-price {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* ============================================= */
+/* ==       7. SELECT VIEW STYLING            == */
+/* ============================================= */
+.select-view-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  padding: 2rem;
+}
+
+.select-view-content {
+  text-align: center;
+  max-width: 600px;
   width: 100%;
-  padding: 12px;
-  margin-top: 10px;
 }
+
+.select-view-content h1 {
+  color: var(--text-light);
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.select-subtitle {
+  color: #9ca3af;
+  font-size: 1.2rem;
+  margin-bottom: 3rem;
+}
+
+.select-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.select-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--text-light);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.select-link:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(109, 40, 217, 0.2);
+}
+
+.select-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.select-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* ============================================= */
+/* ==       6. RESPONSIVE DESIGN              == */
+/* ============================================= */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .command-container {
+    padding: 1.5rem;
+  }
+  
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .cart-summary {
+    right: 15px;
+    bottom: 15px;
+    min-width: 280px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .command-container {
+    padding: 1rem;
+  }
+  
+  .command-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .command-header h1 {
+    font-size: 1.75rem;
+    text-align: center;
+  }
+  
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .menu-table {
+    font-size: 0.875rem;
+  }
+  
+  .menu-table th,
+  .menu-table td {
+    padding: 8px 6px;
+  }
+  
+  .actions-cell {
+    white-space: nowrap;
+  }
+  
+  .actions-cell button {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    margin-right: 5px;
+  }
+  
+  .cart-summary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 12px 12px 0 0;
+    min-width: auto;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  
+  .login-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .login-card h1 {
+    font-size: 2rem;
+  }
+  
+  .pwd-field {
+    flex-direction: row;
+  }
+  
+  .pwd-field input {
+    flex-grow: 1;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .tabletop-container {
+    padding: 0.5rem;
+    margin: 1rem auto;
+  }
+  
+  .menu-item-image {
+    height: 150px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+  }
+  
+  .login-card h1 {
+    font-size: 1.75rem;
+  }
+}
+
