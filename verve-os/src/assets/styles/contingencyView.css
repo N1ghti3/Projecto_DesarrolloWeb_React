@@ -3,7 +3,7 @@
   max-width: 900px;
   margin: 20px auto;
   padding: 20px;
-  background-color: #fff;
+  background-color: #111827;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--card-shadow);
@@ -46,4 +46,32 @@
   width: 100%;
   padding: 12px;
   margin-top: 10px;
+}
+.table-selection {
+  margin-bottom: 20px;  /* Espacio inferior para separación */
+  padding: 15px;  /* Padding interno */
+  background-color: #111827;  /* Fondo oscuro, igual que .contingency-container */
+  border: 1px solid var(--border-color);  /* Borde sutil */
+  border-radius: 8px;  /* Bordes redondeados */
+  box-shadow: var(--card-shadow);  /* Sombra, si está definida */
+}
+.table-selection label {
+  display: block;  /* Hace que el label ocupe toda la línea */
+  margin-bottom: 8px;  /* Espacio debajo del label */
+  color: var(--primary-color);  /* Color del texto, igual que en .contingency-header h1 */
+  font-weight: bold;  /* Opcional: para resaltar */
+}
+.table-selection input {
+  width: 97%;  /* Ancho completo */
+  padding: 10px;  /* Padding interno */
+  background-color: #1f2937;  /* Fondo ligeramente más claro que el div, para contraste */
+  color: white;  /* Texto blanco */
+  border: 1px solid var(--border-color);  /* Borde sutil */
+  border-radius: 4px;  /* Bordes redondeados */
+  font-size: 16px;  /* Tamaño de fuente */
+}
+.table-selection input:focus {
+  outline: none;  /* Quita el outline por defecto */
+  border-color: var(--primary-color);  /* Borde azul al enfocar, para resaltar */
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);  /* Sombra sutil al enfocar */
 }
