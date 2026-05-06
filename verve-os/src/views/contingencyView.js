@@ -1,58 +1,50 @@
 // src/views/ContingencyView.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../components/toast/ToastProvider';
+import useOrderViewModel from '../viewmodels/OrderViewModel';
 import '../assets/styles/contingencyView.css';
 
-// Datos de ejemplo que, en un caso real, vendrían de una API
-const menuData = [
-  { id: 1, name: 'Margarita', category: 'Cócteles', price: 12.50 },
-  { id: 2, name: 'Papas Fritas', category: 'Aperitivos', price: 6.00 },
-  { id: 3, name: 'Cerveza Club Colombia', category: 'Cervezas', price: 5.00 },
-  { id: 4, name: 'Nachos con Queso', category: 'Aperitivos', price: 9.50 },
-  { id: 5, name: 'Mojito', category: 'Cócteles', price: 11.00 },
-];
-
 const ContingencyView = () => {
-  const [menu, setMenu] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [selectedTable, setSelectedTable] = useState('');
-  const [orderFeedback, setOrderFeedback] = useState('');
-
-  useEffect(() => {
-    // Simula la carga del menú desde una API
-    setMenu(menuData);
-  }, []);
+  const { showToast } = useToast();
+  const {
+    menuItems,
+    cartItems,
+    selectedTable,
+    setSelectedTable,
+    orderFeedback,
+    cartTotal,
+    addToCart,
+    sendContingencyOrder,
+    clearOrderFeedback,
+  } = useOrderViewModel();
 
   const handleAddToCart = (item) => {
     if (!selectedTable) {
-      alert('Por favor, selecciona una mesa antes de añadir productos.');
+      showToast('Por favor, selecciona una mesa antes de añadir productos.', 'warning');
       return;
     }
-    setCart(prevCart => [...prevCart, item]);
+
+    addToCart(item);
+    showToast(`${item.name} agregado al pedido.`, 'info', 1500);
   };
 
   const handleSendOrder = () => {
-    if (!selectedTable || cart.length === 0) {
-      setOrderFeedback('Error: Debes seleccionar una mesa y añadir productos al pedido.');
-      return;
-    }
-    
-    // Aquí se enviaría el pedido a la API del backend
-    console.log(`--- NUEVO PEDIDO (CONTINGENCIA) ---`);
-    console.log(`Mesa: ${selectedTable}`);
-    console.log('Items:', cart);
-    console.log('Total:', cart.reduce((total, item) => total + item.price, 0).toFixed(2));
-    console.log(`---------------------------------`);
-
-    // Mostrar confirmación y limpiar el estado
-    setOrderFeedback(`¡Pedido para la mesa ${selectedTable} enviado con éxito!`);
-    setCart([]);
-    setSelectedTable('');
-
-    // Limpiar el mensaje después de unos segundos
-    setTimeout(() => setOrderFeedback(''), 3000);
+    const result = sendContingencyOrder();
+    showToast(result.message, result.type);
   };
 
+  useEffect(() => {
+    if (!orderFeedback) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      clearOrderFeedback();
+    }, 3000);
+
+    return () => window.clearTimeout(timerId);
+  }, [orderFeedback, clearOrderFeedback]);
   return (
     <div className="contingency-container">
       <header className="contingency-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -77,7 +69,7 @@ const ContingencyView = () => {
       <div className="contingency-content">
         <div className="menu-list">
           <h2>Menú Disponible</h2>
-          {menu.map(item => (
+          {menuItems.map(item => (
             <div key={item.id} className="menu-item-contingency">
               <span>{item.name} - ${item.price.toFixed(2)}</span>
               <button onClick={() => handleAddToCart(item)} disabled={!selectedTable}>
@@ -89,9 +81,9 @@ const ContingencyView = () => {
 
         <div className="order-summary">
           <h2>Pedido Actual</h2>
-          {cart.length > 0 ? (
+          {cartItems.length > 0 ? (
             <ul>
-              {cart.map((item, index) => (
+              {cartItems.map((item, index) => (
                 <li key={index}>{item.name} - ${item.price.toFixed(2)}</li>
               ))}
             </ul>
@@ -99,12 +91,12 @@ const ContingencyView = () => {
             <p>El carrito está vacío.</p>
           )}
           <div className="order-total">
-            <strong>Total: ${cart.reduce((total, item) => total + item.price, 0).toFixed(2)}</strong>
+            <strong>Total: ${cartTotal.toFixed(2)}</strong>
           </div>
           <button 
             className="send-order-btn" 
             onClick={handleSendOrder} 
-            disabled={!selectedTable || cart.length === 0}
+            disabled={!selectedTable || cartItems.length === 0}
           >
             Enviar Pedido
           </button>

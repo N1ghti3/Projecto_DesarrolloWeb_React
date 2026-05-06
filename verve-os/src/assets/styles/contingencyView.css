@@ -37,8 +37,8 @@
   background-color: var(--secondary-color);
   color: white;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border: none;
   cursor: pointer;
 }
@@ -74,4 +74,20 @@
   outline: none;  /* Quita el outline por defecto */
   border-color: var(--primary-color);  /* Borde azul al enfocar, para resaltar */
   box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);  /* Sombra sutil al enfocar */
+}
+
+@media (max-width: 768px) {
+  .contingency-container {
+    margin: 12px;
+    padding: 14px;
+  }
+
+  .contingency-content {
+    grid-template-columns: 1fr;
+  }
+
+  .table-selection input {
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

@@ -1,26 +1,26 @@
 // src/views/tableTopView.js
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MenuItem from '../components/menu/menuItem'; 
 import Cart from '../components/cart/cart';
+import useOrderViewModel from '../viewmodels/OrderViewModel';
 import '../assets/styles/tableTopView.css';
-
-// Datos de ejemplo (eventualmente vendrán de una API)
-const menuData = [
-  { id: 1, name: 'Margarita', price: 12.50, image: 'margarita.jpg', description: 'Tequila, triple sec y jugo de lima natural.' },
-  { id: 2, name: 'Papas Fritas', price: 6.00, image: 'papas.jpg', description: 'Papas a la francesa con salsa de la casa.' },
-  { id: 3, name: 'Mojito', price: 11.00, image: 'mojito.jpg', description: 'Ron, hierbabuena, soda y limón.' },
-  { id: 4, name: 'Nachos con Queso', price: 9.50, image: 'nachos.jpg', description: 'Totopos con queso fundido y pico de gallo.' },
-  { id: 5, name: 'Cerveza Club Colombia', price: 5.00, image: 'club-colombia.jpg', description: 'Cerveza lager bien fría.' },
-];
 
 const TabletopView = () => {
   const { tableId } = useParams();
-  const [cartItems, setCartItems] = useState([]); // Estado para el carrito
+  const {
+    menuItems,
+    cartItems,
+    addToCart,
+    setSelectedTable,
+  } = useOrderViewModel();
 
-  // Función para agregar un item al carrito
+  useEffect(() => {
+    setSelectedTable(tableId);
+  }, [tableId, setSelectedTable]);
+
   const handleAddToCart = (itemToAdd) => {
-    setCartItems([...cartItems, itemToAdd]);
+    addToCart(itemToAdd);
   };
 
   return (
@@ -31,7 +31,7 @@ const TabletopView = () => {
       </header>
       <h2>Nuestro Menú</h2>
       <div className="menu-grid">
-        {menuData.map(item => (
+        {menuItems.map(item => (
           <MenuItem
             key={item.id}
             item={item}
