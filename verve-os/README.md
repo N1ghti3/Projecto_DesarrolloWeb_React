@@ -1,70 +1,77 @@
-# Getting Started with Create React App
+# VerveOS - POS para Gastro-Bar
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema POS pensado para gastro-bares. Permite gestionar pedidos, mesas, cocina, barra, usuarios y contingencia offline.
 
-## Available Scripts
+## Requisitos
 
-In the project directory, you can run:
+- Node.js >= 18
+- npm
 
-### `npm start`
+## Configuración inicial
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+# Instalar dependencias
+npm install
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+# Generar Prisma client y crear la BD
+npx prisma generate
+npx prisma db push
 
-### `npm test`
+# Poblar la base de datos con datos de demostración
+npx prisma db seed
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Ejecutar
 
-### `npm run build`
+Se necesitan dos terminales:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Terminal 1 — WebSocket** (gestión de pedidos en tiempo real):
+```bash
+npx tsx mini-services/verveos-ws/index.ts
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Terminal 2 — Next.js**:
+```bash
+npm run dev
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+La aplicación arranca en `http://localhost:3000`.
 
-### `npm run eject`
+## Credenciales de prueba
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Rol | Email | Contraseña | PIN |
+|-----|-------|-----------|-----|
+| Admin | admin@verveos.com | admin123 | 1234 |
+| Mesero | mesero@verveos.com | mesero123 | 1111 |
+| Bartender | barra@verveos.com | barra123 | 3333 |
+| Cocina | cocina@verveos.com | cocina123 | 4444 |
+| Cajero | cajero@verveos.com | cajero123 | 5555 |
+| Supervisor | visor@verveos.com | visor123 | 6666 |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Funcionalidades
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Roles** — Admin, Mesero, Cocina, Barra, Cajero, Supervisor (cada uno ve su interfaz)
+- **Gestión de mesas** — Ocupar, liberar, combinar, ver cuenta
+- **Pedidos** — Crear, agregar items, enviar a estación correspondiente (cocina/barra)
+- **Estaciones** — Cocina y Barra reciben pedidos en tiempo real vía WebSocket
+- **Facturación** — Split de cuenta, imprimir ticket térmico, marcar como pagado
+- **Dashboard** — KPIs, ventas por día, top productos, por estación
+- **Usuarios** — CRUD completo con roles y PIN
+- **Categorías** — CRUD con emoji y asignación a estación
+- **Menú** — CRUD de productos con disponibilidad
+- **Contingencia offline** — Modo sin conexión con cola de pedidos local
+- **Llamadas a mesero** — Notificaciones en tiempo real
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Limitaciones actuales
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Base de datos**: SQLite (no recomendado para producción con alta concurrencia. Migrar a PostgreSQL o Supabase)
+- **Autenticación**: JWT simple sin refresh token rotation ni sesión persistente avanzada
+- **Impresión de tickets**: Abre una ventana del navegador con formato térmico. No hay integración directa con impresoras Bluetooth/USB
+- **Pagos electrónicos**: No integra pasarela de pago (Stripe, Mercado Pago, etc.). Solo registro de pago manual (efectivo/tarjeta/transferencia)
+- **WebSocket**: Servicio separado que debe ejecutarse manualmente. Sin auto-arranque ni gestión de procesos (PM2, systemd)
+- **Multi-tenant**: No soporta múltiples locales/vendedores
+- **Internacionalización**: Solo español, sin soporte multi-idioma
+- **Tests**: No hay suite de tests automatizados
+- **Despliegue**: No hay configuración Docker ni scripts de deploy automatizado
+- **Caché de menú**: Implementación básica en memoria, se pierde al reiniciar el servidor
+- **Responsive**: Optimizado para tablets/kioskos. Algunas vistas no están adaptadas para móviles pequeños
