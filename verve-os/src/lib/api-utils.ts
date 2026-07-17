@@ -90,13 +90,23 @@ export async function requireAnyAuth(
   return { error: fail('No autorizado. Se requiere JWT o device token.', 401) }
 }
 
+// Shared secret para comunicación interna con el WebSocket
+function getWsInternalSecret(): string {
+  return process.env.WS_INTERNAL_SECRET || ''
+}
+
 // Envía un evento al mini-service WebSocket
 export async function emitWsEvent(event: string, orderId: string) {
   try {
-    const base = process.env.INTERNAL_WS_EMITTER_URL || 'http://127.0.0.1:3003'
+    const base = process.env.INTERNAL_WS_EMITTER_URL
+    const secret = getWsInternalSecret()
+    if (!base) {
+      console.warn('[VerveOS] INTERNAL_WS_EMITTER_URL no configurado')
+      return
+    }
     const res = await fetch(`${base}/__emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
       body: JSON.stringify({ event, orderId }),
     })
     if (!res.ok) {
@@ -110,10 +120,15 @@ export async function emitWsEvent(event: string, orderId: string) {
 // Emite un evento genérico (no ligado a una orden) al WS: waiter-call, table-update, etc.
 export async function emitWsBroadcast(event: string, payload: unknown, rooms?: string[]) {
   try {
-    const base = process.env.INTERNAL_WS_EMITTER_URL || 'http://127.0.0.1:3003'
+    const base = process.env.INTERNAL_WS_EMITTER_URL
+    const secret = getWsInternalSecret()
+    if (!base) {
+      console.warn('[VerveOS] INTERNAL_WS_EMITTER_URL no configurado')
+      return
+    }
     await fetch(`${base}/__broadcast`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
       body: JSON.stringify({ event, payload, rooms }),
     })
   } catch (err) {
@@ -127,9 +142,27 @@ export async function getTaxRate(): Promise<number> {
   return setting ? Number(setting.value) : 19
 }
 
+// In-memory rate limiter (simple, single-process)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+
+export function checkRateLimit(key: string, maxAttempts = 5, windowMs = 60000): { allowed: boolean; remaining: number } {
+  const now = Date.now()
+  const entry = rateLimitStore.get(key)
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs })
+    return { allowed: true, remaining: maxAttempts - 1 }
+  }
+  entry.count++
+  if (entry.count > maxAttempts) {
+    return { allowed: false, remaining: 0 }
+  }
+  return { allowed: true, remaining: maxAttempts - entry.count }
+}
+
 // Manejador de errores
 export function handleRouteError(err: unknown) {
   console.error('[VerveOS] Error en ruta:', err)
-  const message = err instanceof Error ? err.message : 'Error interno del servidor'
+  const isDev = process.env.NODE_ENV === 'development'
+  const message = err instanceof Error && isDev ? err.message : 'Error interno del servidor'
   return fail(message, 500)
 }

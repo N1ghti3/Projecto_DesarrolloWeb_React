@@ -1,10 +1,17 @@
 // VerveOS - Librería de autenticación (JWT + bcrypt + PIN + device sessions)
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import { db } from './db'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'verveos-dev-secret-change-in-production'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'verveos-dev-refresh-secret-change'
+function requireEnv(name: string): string {
+  const val = process.env[name]
+  if (!val) throw new Error(`Falta variable de entorno: ${name}`)
+  return val
+}
+
+const JWT_SECRET = requireEnv('JWT_SECRET')
+const JWT_REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET')
 const ACCESS_EXPIRES = '15m'
 const REFRESH_EXPIRES = '7d'
 
@@ -68,22 +75,21 @@ export function issueTokens(user: JwtUser) {
   }
 }
 
-// Genera un token aleatorio para sesiones de dispositivo kiosk
+// Genera un token criptográficamente seguro para sesiones de dispositivo kiosk
 export function generateDeviceToken(): string {
-  return (
-    'dev_' +
-    Array.from({ length: 40 }, () =>
-      'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]
-    ).join('')
-  )
+  return 'dev_' + crypto.randomBytes(30).toString('hex')
 }
 
-// Verifica un PIN de staff contra los usuarios con ese PIN.
+// Verifica un PIN de staff contra los usuarios con PIN hasheado.
 export async function verifyPin(pin: string): Promise<JwtUser | null> {
   if (!pin || pin.length !== 4) return null
-  const user = await db.user.findFirst({ where: { pin } })
-  if (!user) return null
-  return { id: user.id, name: user.name, email: user.email, role: user.role }
+  const users = await db.user.findMany({ where: { pin: { not: null } } })
+  for (const user of users) {
+    if (user.pin && (await bcrypt.compare(pin, user.pin))) {
+      return { id: user.id, name: user.name, email: user.email, role: user.role }
+    }
+  }
+  return null
 }
 
 // Staff roles que pueden abrir mesas / acceder a funciones admin en kiosk

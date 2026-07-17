@@ -92,8 +92,20 @@ async function buildOrderPayload(orderId: string): Promise<OrderPayload | null> 
 }
 
 // --- Rutas internas ---
+const WS_INTERNAL_SECRET = process.env.WS_INTERNAL_SECRET || ''
+
+function requireInternalSecret(req: express.Request, res: express.Response): boolean {
+  const secret = req.headers['x-internal-secret'] || req.headers['X-Internal-Secret']
+  if (!WS_INTERNAL_SECRET || secret !== WS_INTERNAL_SECRET) {
+    res.status(403).json({ error: 'Acceso denegado' })
+    return false
+  }
+  return true
+}
+
 // POST /__emit { event, orderId } - emite eventos de orden a bar/cocina/table
 emitterApp.post('/__emit', async (req, res) => {
+  if (!requireInternalSecret(req, res)) return
   try {
     const { event, orderId } = req.body || {}
     if (!event || !orderId) return res.status(400).json({ error: 'event y orderId requeridos' })
@@ -131,6 +143,7 @@ emitterApp.post('/__emit', async (req, res) => {
 
 // POST /__broadcast { event, payload } - emite a salas específicas o a todos
 emitterApp.post('/__broadcast', async (req, res) => {
+  if (!requireInternalSecret(req, res)) return
   try {
     const { event, payload, rooms } = req.body || {}
     if (!event) return res.status(400).json({ error: 'event requerido' })

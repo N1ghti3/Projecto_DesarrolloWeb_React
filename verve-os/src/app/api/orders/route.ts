@@ -33,6 +33,8 @@ export async function POST(req: Request) {
     if (!table) return fail('Mesa no encontrada', 404)
 
     const notes = String(body.notes ?? '').trim()
+    const customerName = body.customerName ? String(body.customerName).trim() : null
+    const customerEmail = body.customerEmail ? String(body.customerEmail).trim() : null
     const items: CreateItemInput[] = body.items
 
     // Validar productos, stock y estación
@@ -88,6 +90,8 @@ export async function POST(req: Request) {
           notes,
           userId: auth.user?.id ?? null,
           source: 'online',
+          customerName,
+          customerEmail,
           items: { create: orderItemsData },
         },
         include: { items: { include: { product: true } } },
@@ -119,6 +123,8 @@ export async function POST(req: Request) {
       paidAt: order.paidAt?.toISOString() ?? null,
       notes: order.notes,
       source: order.source,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
       createdAt: order.createdAt.toISOString(),
       items: order.items.map((it) => ({
         id: it.id,

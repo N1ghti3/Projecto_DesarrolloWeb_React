@@ -1,7 +1,6 @@
 // TablesView - Gestión de mesas: estado (libre/ocupada/cobrada) y acciones rápidas
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { io, Socket } from 'socket.io-client'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,8 +14,11 @@ import {
   Loader2,
   RefreshCw,
   Tablet,
+  Eye,
 } from 'lucide-react'
 import { api, clearDeviceToken } from '@/lib/api'
+import { useWebSocket } from '@/hooks/use-websocket'
+import { wsService } from '@/lib/websocket'
 import type { TableInfo, TableStatus, User, View } from '@/lib/types'
 import { AppHeader } from '../AppHeader'
 import { ConfirmModal } from '../ConfirmModal'
@@ -41,12 +43,14 @@ const STATUS_META: Record<
 
 export function TablesView({ user, online, navigate, onLogout }: TablesViewProps) {
   const isViewer = user.role === 'visor'
+  const isMesa = user.role === 'mesa'
+  const canOpenTable = ['admin', 'mesero'].includes(user.role)
+  const canViewOrder = user.role === 'admin'
   const [tables, setTables] = useState<TableInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [confirmTable, setConfirmTable] = useState<TableInfo | null>(null)
-  const socketRef = useRef<Socket | null>(null)
 
   const loadTables = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -66,32 +70,12 @@ export function TablesView({ user, online, navigate, onLogout }: TablesViewProps
 
   useEffect(() => {
     loadTables()
-
-    // WebSocket: unirse a 'staff' y recargar al recibir 'table:update'
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'] as any,
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1500,
-      timeout: 10000,
-    } as any)
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      socket.emit('join', 'staff')
-    })
-
-    socket.on('table:update', () => {
-      // Recarga silenciosa para reflejar el nuevo estado de la mesa
-      loadTables(true)
-    })
-
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
   }, [loadTables])
+
+  useWebSocket({
+    events: { 'table:update': () => loadTables(true) },
+    onConnect: () => wsService.join('staff'),
+  })
 
   const closeTable = async (table: TableInfo) => {
     setActionLoading(table.number)
@@ -243,7 +227,7 @@ export function TablesView({ user, online, navigate, onLogout }: TablesViewProps
 
                   {/* Acciones según estado (visor = solo lectura) */}
                   <div className="mt-auto pt-1 space-y-2">
-                    {table.status === 'libre' && !isViewer && (
+                    {table.status === 'libre' && canOpenTable && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -258,7 +242,7 @@ export function TablesView({ user, online, navigate, onLogout }: TablesViewProps
                         Abrir mesa
                       </Button>
                     )}
-                    {table.status === 'libre' && isViewer && (
+                    {table.status === 'libre' && !canOpenTable && (
                       <div className="text-center text-xs text-muted-foreground py-2">
                         Mesa disponible
                       </div>
@@ -266,17 +250,29 @@ export function TablesView({ user, online, navigate, onLogout }: TablesViewProps
 
                     {table.status === 'ocupada' && (
                       <div className="space-y-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full gap-1.5 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-                          disabled={isBusy}
-                          onClick={() => navigate({ name: 'kiosk', tableId: table.number })}
-                        >
-                          <Tablet className="w-3.5 h-3.5" />
-                          Ver tablet {isViewer ? '' : '(cliente)'}
-                        </Button>
-                        {!isViewer && (
+                        {isMesa && (
+                          <Button
+                            size="sm"
+                            className="w-full gap-1.5"
+                            onClick={() => navigate({ name: 'kiosk', tableId: table.number })}
+                          >
+                            <Tablet className="w-3.5 h-3.5" />
+                            Entrar
+                          </Button>
+                        )}
+                        {!isMesa && canViewOrder && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-1.5 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                            disabled={isBusy}
+                            onClick={() => navigate({ name: 'kiosk', tableId: table.number })}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Ver pedido (admin)
+                          </Button>
+                        )}
+                        {!isMesa && !isViewer && (
                           <div className="grid grid-cols-2 gap-2">
                             <Button
                               size="sm"
@@ -299,7 +295,7 @@ export function TablesView({ user, online, navigate, onLogout }: TablesViewProps
                             </Button>
                           </div>
                         )}
-                        {isViewer && (
+                        {!isMesa && isViewer && (
                           <Button
                             size="sm"
                             variant="outline"

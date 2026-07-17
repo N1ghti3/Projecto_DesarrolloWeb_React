@@ -42,7 +42,7 @@ export function SelectView({ user, online, navigate, onLogout }: SelectViewProps
       emoji: '🪑',
       icon: Armchair,
       view: { name: 'tables' },
-      allowedRoles: ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor'],
+      allowedRoles: ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor', 'mesa'],
     },
     {
       key: 'command',

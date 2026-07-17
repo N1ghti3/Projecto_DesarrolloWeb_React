@@ -35,9 +35,22 @@ async function main() {
       data: {
         name: u.name,
         email: u.email,
-        passwordHash: await bcrypt.hash(u.password, 10),
-        pin: u.pin,
+        passwordHash: await bcrypt.hash(u.password, 12),
+        pin: await bcrypt.hash(u.pin, 12),
         role: u.role,
+      },
+    })
+  }
+
+  // Usuarios MESA para testing del kiosko
+  for (let i = 1; i <= 12; i++) {
+    const tableNumber = `M${i}`
+    await db.user.create({
+      data: {
+        name: `Mesa ${i}`,
+        email: `mesa-${tableNumber.toLowerCase()}@verveos.com`,
+        passwordHash: await bcrypt.hash('mesa123', 12),
+        role: 'mesa',
       },
     })
   }
@@ -49,6 +62,7 @@ async function main() {
   console.log('   cocina@verveos.com / cocina123 (PIN 4444)')
   console.log('   cajero@verveos.com / cajero123 (PIN 5555)')
   console.log('   visor@verveos.com / visor123 (PIN 6666) — solo lectura')
+  console.log('   mesa-m1@verveos.com … mesa-m12@verveos.com / mesa123 — testing de kiosko')
 
   // Mesas M1-M12
   const tables = Array.from({ length: 12 }, (_, i) => ({

@@ -3,12 +3,18 @@
 // crea una DeviceSession y devuelve el token + info de la mesa.
 import { db } from '@/lib/db'
 import { verifyPin, generateDeviceToken } from '@/lib/auth'
-import { ok, fail, handleRouteError, emitWsBroadcast } from '@/lib/api-utils'
+import { ok, fail, handleRouteError, emitWsBroadcast, checkRateLimit } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const rl = checkRateLimit(`pin:${ip}`, 5, 60000)
+    if (!rl.allowed) {
+      return fail('Demasiados intentos. Intenta de nuevo en un minuto.', 429)
+    }
+
     const body = await req.json().catch(() => null)
     if (!body || !body.pin || !body.tableNumber) {
       return fail('pin y tableNumber son obligatorios', 422)

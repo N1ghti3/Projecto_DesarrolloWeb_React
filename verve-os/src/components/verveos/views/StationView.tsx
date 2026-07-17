@@ -3,7 +3,6 @@
 // Cada estación solo ve los items cuyo `station` coincide con el suyo.
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { io, Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +21,8 @@ import {
   Bell,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useWebSocket } from '@/hooks/use-websocket'
+import { wsService } from '@/lib/websocket'
 import { useNotificationSound } from '@/hooks/use-notification-sound'
 import type { User, View, Order, OrderItem, ItemStatus } from '@/lib/types'
 import { formatPrice } from '../MenuItem'
@@ -71,10 +72,8 @@ function timeAgo(iso: string): string {
 export function StationView({ user, station, online, navigate, onLogout }: StationViewProps) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [connected, setConnected] = useState(false)
-  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const socketRef = useRef<Socket | null>(null)
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
   const soundEnabledRef = useRef(soundEnabled)
   const { play } = useNotificationSound()
 
@@ -82,89 +81,57 @@ export function StationView({ user, station, online, navigate, onLogout }: Stati
     soundEnabledRef.current = soundEnabled
   }, [soundEnabled])
 
-  useEffect(() => {
-    setLoading(true)
-
-    // Conexión WebSocket (regla del gateway: XTransformPort=3003, path "/")
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'] as any,
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1500,
-      timeout: 10000,
-    } as any)
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      setConnected(true)
-      socket.emit('join', station)
-      socket.emit('request:active-orders', { station })
-    })
-    socket.on('disconnect', () => setConnected(false))
-    socket.on('connect_error', () => setConnected(false))
-
-    socket.on('active-orders', (list: Order[]) => {
-      setOrders(list)
-      setLoading(false)
-    })
-
-    socket.on('order:new', (order: Order) => {
-      // Solo nos interesa si la orden tiene al menos un ítem para esta estación
-      const hasForStation = order.items.some((it) => it.station === station)
-      if (!hasForStation) return
-      setOrders((prev) => {
-        if (prev.find((o) => o.id === order.id)) return prev
-        return [...prev, order].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-      })
-      toast.info(`Nuevo pedido · Mesa ${order.tableNumber ?? order.tableId}`, {
-        description: `${order.items.filter((i) => i.station === station).length} artículo(s) para ${station}`,
-      })
-      if (soundEnabledRef.current) play()
-    })
-
-    socket.on('order:status', (order: Order) => {
-      setOrders((prev) => {
-        const hasForStation = order.items.some((it) => it.station === station)
-        // Si la orden entró a estado terminal, removerla tras 3s
-        if (['pagado', 'cancelado', 'entregado'].includes(order.status)) {
-          const updated = prev.map((o) => (o.id === order.id ? order : o))
-          setTimeout(() => {
-            setOrders((cur) => cur.filter((o) => o.id !== order.id))
-          }, 3000)
-          return updated
-        }
-        // Si la orden no tiene items para esta estación, no mostrarla
-        if (!hasForStation) {
-          return prev.filter((o) => o.id !== order.id)
-        }
-        return prev.some((o) => o.id === order.id)
-          ? prev.map((o) => (o.id === order.id ? order : o))
-          : [...prev, order]
-      })
-    })
-
-    socket.on('item:status', (payload: { orderId: string; itemId: string; status: ItemStatus }) => {
-      setOrders((prev) =>
-        prev.map((o) => {
-          if (o.id !== payload.orderId) return o
-          return {
-            ...o,
-            items: o.items.map((it) =>
-              it.id === payload.itemId ? { ...it, status: payload.status } : it
-            ),
-          }
+  const { connected } = useWebSocket({
+    events: {
+      'active-orders': (list: unknown) => { setOrders(list as Order[]); setLoading(false) },
+      'order:new': (order: unknown) => {
+        const o = order as Order
+        const hasForStation = o.items.some((it) => it.station === station)
+        if (!hasForStation) return
+        setOrders((prev) => {
+          if (prev.find((p) => p.id === o.id)) return prev
+          return [...prev, o].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          )
         })
-      )
-    })
+        toast.info(`Nuevo pedido · Mesa ${o.tableNumber ?? o.tableId}`, {
+          description: `${o.items.filter((i) => i.station === station).length} artículo(s) para ${station}`,
+        })
+        if (soundEnabledRef.current) play()
+      },
+      'order:status': (order: unknown) => {
+        const o = order as Order
+        setOrders((prev) => {
+          const hasForStation = o.items.some((it) => it.station === station)
+          if (['pagado', 'cancelado', 'entregado'].includes(o.status)) {
+            const updated = prev.map((p) => (p.id === o.id ? o : p))
+            setTimeout(() => setOrders((cur) => cur.filter((p) => p.id !== o.id)), 3000)
+            return updated
+          }
+          if (!hasForStation) return prev.filter((p) => p.id !== o.id)
+          return prev.some((p) => p.id === o.id)
+            ? prev.map((p) => (p.id === o.id ? o : p))
+            : [...prev, o]
+        })
+      },
+      'item:status': (payload: unknown) => {
+        const p = payload as { orderId: string; itemId: string; status: ItemStatus }
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id !== p.orderId) return o
+            return { ...o, items: o.items.map((it) => (it.id === p.itemId ? { ...it, status: p.status } : it)) }
+          })
+        )
+      },
+    },
+    onConnect: () => {
+      wsService.join(station)
+      wsService.emit('request:active-orders', { station })
+    },
+    deps: [station],
+  })
 
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [station])
+
 
   const changeItemStatus = async (order: Order, item: OrderItem, status: ItemStatus) => {
     setUpdatingItemId(item.id)

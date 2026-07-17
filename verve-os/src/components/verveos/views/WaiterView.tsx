@@ -1,12 +1,13 @@
 // WaiterView - Llamados de mesa y pedidos listos en tiempo real (meseros)
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { io, Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useWebSocket } from '@/hooks/use-websocket'
+import { wsService } from '@/lib/websocket'
 import {
   Bell,
   CheckCircle2,
@@ -52,11 +53,9 @@ export function WaiterView({ user, online, navigate, onLogout }: WaiterViewProps
   const [calls, setCalls] = useState<WaiterCall[]>([])
   const [readyOrders, setReadyOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [connected, setConnected] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [attendingId, setAttendingId] = useState<string | null>(null)
   const [deliveringId, setDeliveringId] = useState<string | null>(null)
-  const socketRef = useRef<Socket | null>(null)
   const soundEnabledRef = useRef(soundEnabled)
   const { play } = useNotificationSound()
 
@@ -80,81 +79,48 @@ export function WaiterView({ user, online, navigate, onLogout }: WaiterViewProps
 
   useEffect(() => {
     loadReadyOrders()
+  }, [loadReadyOrders])
 
-    // Conexión WebSocket (regla del gateway: XTransformPort=3003, path "/")
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'] as any,
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1500,
-      timeout: 10000,
-    } as any)
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      setConnected(true)
-      socket.emit('join', 'meseros')
-      socket.emit('request:waiter-calls')
-    })
-    socket.on('disconnect', () => setConnected(false))
-    socket.on('connect_error', () => setConnected(false))
-
-    // Respuesta inicial a request:waiter-calls (lista plural con guion)
-    socket.on('waiter-calls', (list: WaiterCall[]) => {
-      setCalls(Array.isArray(list) ? list : [])
-    })
-
-    // Nuevo llamado de mesa (singular, broadcast a meseros/staff)
-    socket.on('waiter:call', (call: WaiterCall) => {
-      setCalls((prev) => {
-        if (prev.find((c) => c.id === call.id)) return prev
-        return [...prev, call].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-      })
-      const meta = REASON_META[call.reason] ?? REASON_META.mesero
-      toast.info(`Mesa ${call.tableNumber ?? call.tableId} pide ${meta.label.toLowerCase()}`)
-      if (soundEnabledRef.current) play()
-    })
-
-    // Llamado atendido (por otro mesero o yo mismo): remover de la lista
-    socket.on('waiter:attend', (payload: { id: string }) => {
-      setCalls((prev) => prev.filter((c) => c.id !== payload.id))
-    })
-
-    // Cambio de estado de orden: si está listo, agregar; si entregado/cancelado, quitar
-    socket.on('order:status', (order: Order) => {
-      if (order.status === 'listo') {
-        setReadyOrders((prev) =>
-          prev.find((o) => o.id === order.id) ? prev : [...prev, order]
-        )
-      } else if (order.status === 'entregado' || order.status === 'cancelado') {
-        setReadyOrders((prev) => prev.filter((o) => o.id !== order.id))
-      }
-    })
-
-    // El mini-service WS emite 'order:ready' a la sala 'meseros' cuando una orden
-    // pasa a 'listo'. Lo escuchamos también por robustez.
-    socket.on('order:ready', (order: Order) => {
-      setReadyOrders((prev) =>
-        prev.find((o) => o.id === order.id) ? prev : [...prev, order]
-      )
-      toast.info(`Pedido listo · Mesa ${order.tableId}`, {
-        description: `${order.items.reduce((s, i) => s + i.quantity, 0)} artículo(s) para entregar`,
-      })
-    })
-
-    // Pedidos nuevos: no relevantes para el mesero (los listos llegan por order:ready)
-    socket.on('order:new', () => {
-      /* ignorar */
-    })
-
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [loadReadyOrders, play])
+  const { connected } = useWebSocket({
+    events: {
+      'waiter-calls': (list: unknown) => setCalls(Array.isArray(list) ? (list as WaiterCall[]) : []),
+      'waiter:call': (call: unknown) => {
+        const c = call as WaiterCall
+        setCalls((prev) => {
+          if (prev.find((p) => p.id === c.id)) return prev
+          return [...prev, c].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          )
+        })
+        const meta = REASON_META[c.reason] ?? REASON_META.mesero
+        toast.info(`Mesa ${c.tableNumber ?? c.tableId} pide ${meta.label.toLowerCase()}`)
+        if (soundEnabledRef.current) play()
+      },
+      'waiter:attend': (payload: unknown) => {
+        const p = payload as { id: string }
+        setCalls((prev) => prev.filter((c) => c.id !== p.id))
+      },
+      'order:status': (order: unknown) => {
+        const o = order as Order
+        if (o.status === 'listo') {
+          setReadyOrders((prev) => (prev.find((p) => p.id === o.id) ? prev : [...prev, o]))
+        } else if (o.status === 'entregado' || o.status === 'cancelado') {
+          setReadyOrders((prev) => prev.filter((p) => p.id !== o.id))
+        }
+      },
+      'order:ready': (order: unknown) => {
+        const o = order as Order
+        setReadyOrders((prev) => (prev.find((p) => p.id === o.id) ? prev : [...prev, o]))
+        toast.info(`Pedido listo · Mesa ${o.tableId}`, {
+          description: `${o.items.reduce((s, i) => s + i.quantity, 0)} artículo(s) para entregar`,
+        })
+      },
+    },
+    onConnect: () => {
+      wsService.join('meseros')
+      wsService.emit('request:waiter-calls')
+    },
+  })
 
   const attendCall = async (call: WaiterCall) => {
     setAttendingId(call.id)

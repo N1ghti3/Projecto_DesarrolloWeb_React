@@ -36,6 +36,10 @@ export function setAccessToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token)
 }
 
+export function setRefreshToken(token: string) {
+  localStorage.setItem(REFRESH_KEY, token)
+}
+
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_KEY)
@@ -64,6 +68,9 @@ async function refreshAccessToken(): Promise<string | null> {
       const data = await res.json()
       if (!data.accessToken) return null
       setAccessToken(data.accessToken)
+      if (data.refreshToken) {
+        setRefreshToken(data.refreshToken)
+      }
       if (data.user) {
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
       }
@@ -196,7 +203,7 @@ export const api = {
   listActiveOrders: (station?: 'cocina' | 'barra') =>
     request<{ orders: Order[] }>(`/api/orders/active${station ? `?station=${station}` : ''}`),
 
-  createOrder: (data: { tableId: string; notes?: string; items: Array<{ productId: string; quantity: number; notes?: string }> }, useDevice = false) =>
+  createOrder: (data: { tableId: string; notes?: string; customerName?: string; customerEmail?: string; items: Array<{ productId: string; quantity: number; notes?: string }> }, useDevice = false) =>
     request<{ order: Order }>('/api/orders', { method: 'POST', body: data, useDevice }),
 
   updateOrderStatus: (id: string, status: string) =>

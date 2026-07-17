@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { requireAdmin, ok, fail, handleRouteError } from '@/lib/api-utils'
 import { hashPassword } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,6 @@ export async function GET(req: Request) {
         name: true,
         email: true,
         role: true,
-        pin: true,
         active: true,
         createdAt: true,
         updatedAt: true,
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   }
 }
 
-const VALID_ROLES = ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor']
+const VALID_ROLES = ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor', 'mesa']
 
 export async function POST(req: Request) {
   try {
@@ -51,10 +51,11 @@ export async function POST(req: Request) {
     if (existing) return fail('Ya existe un usuario con ese email', 409)
 
     const passwordHash = await hashPassword(password)
+    const pinHash = pin ? await bcrypt.hash(pin, 12) : null
 
     const user = await db.user.create({
-      data: { name, email, passwordHash, pin, role, active: true },
-      select: { id: true, name: true, email: true, role: true, pin: true, active: true, createdAt: true },
+      data: { name, email, passwordHash, pin: pinHash, role, active: true },
+      select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
     })
 
     return ok({ user }, 201)

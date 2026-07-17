@@ -94,14 +94,17 @@ function printTicket(tableId: string, summary: { subtotal: number; tax: number; 
     '<table>',
   ]
 
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
   for (const it of items) {
     if (it.status === 'cancelado') continue
     const total = it.unitPrice * it.quantity
     lines.push(
-      `<tr><td class="qty">${it.quantity}×</td><td class="name">${it.productName}</td><td class="price">$${(total / 1000).toFixed(1)}k</td></tr>`
+      `<tr><td class="qty">${it.quantity}×</td><td class="name">${esc(it.productName)}</td><td class="price">$${(total / 1000).toFixed(1)}k</td></tr>`
     )
     if (it.notes) {
-      lines.push(`<tr><td></td><td style="font-size:10px;color:#666;padding-left:8mm">${it.notes}</td><td></td></tr>`)
+      lines.push(`<tr><td></td><td style="font-size:10px;color:#666;padding-left:8mm">${esc(it.notes)}</td><td></td></tr>`)
     }
   }
 
@@ -259,6 +262,22 @@ export function BillView({ user, tableId, online, navigate, onLogout }: BillView
           </Card>
         ) : (
           <>
+            {/* Datos del cliente */}
+            {(bill.customerName || bill.customerEmail) && (
+              <Card className="p-4 space-y-1">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Receipt className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-foreground">Cliente</span>
+                </div>
+                {bill.customerName && (
+                  <p className="text-sm font-medium">{bill.customerName}</p>
+                )}
+                {bill.customerEmail && (
+                  <p className="text-xs text-muted-foreground">{bill.customerEmail}</p>
+                )}
+              </Card>
+            )}
+
             {/* Detalle de consumo */}
             <Card className="p-0 overflow-hidden">
               <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">

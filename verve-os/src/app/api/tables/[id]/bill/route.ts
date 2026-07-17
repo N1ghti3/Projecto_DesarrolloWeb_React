@@ -1,7 +1,7 @@
 // GET  /api/tables/:id/bill - Cuenta abierta de la mesa (todas las órdenes no pagadas)
 // POST /api/tables/:id/bill - Cobra toda la cuenta de la mesa (propina + método)
 import { db } from '@/lib/db'
-import { requireAuth, requireStaff, ok, fail, handleRouteError, emitWsEvent, emitWsBroadcast, getTaxRate } from '@/lib/api-utils'
+import { requireAnyAuth, requireStaff, ok, fail, handleRouteError, emitWsEvent, emitWsBroadcast, getTaxRate } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,12 +17,17 @@ async function resolveTable(id: string) {
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const auth = requireAuth(req)
+    const auth = await requireAnyAuth(req)
     if ('error' in auth) return auth.error
 
     const { id } = await ctx.params
     const table = await resolveTable(id)
     if (!table) return fail('Mesa no encontrada', 404)
+
+    // Si es device session, verificar que pertenece a esta mesa
+    if (auth.session && auth.session.tableId !== table.id) {
+      return fail('No autorizado para ver esta mesa', 403)
+    }
 
     const orders = await db.order.findMany({
       where: { tableId: table.id, status: { in: ['pendiente', 'en_preparacion', 'listo', 'entregado'] } },
@@ -32,6 +37,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
     const taxRate = await getTaxRate()
     let subtotal = 0
+    let customerName: string | null = null
+    let customerEmail: string | null = null
     const allItems: Array<{
       orderId: string
       orderItemId: string
@@ -44,6 +51,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       createdAt: string
     }> = []
     for (const o of orders) {
+      if (o.customerName && !customerName) customerName = o.customerName
+      if (o.customerEmail && !customerEmail) customerEmail = o.customerEmail
       for (const it of o.items) {
         if (it.status === 'cancelado') continue
         subtotal += it.unitPrice * it.quantity
@@ -78,6 +87,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       tax,
       total: subtotal, // base
       grandTotal: subtotal + tax, // con IVA (sin propina)
+      customerName,
+      customerEmail,
     }
     // El cliente espera { bill: {...} }
     return ok({ bill: billData })

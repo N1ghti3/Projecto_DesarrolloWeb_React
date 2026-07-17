@@ -1,14 +1,17 @@
-// POST /api/auth/register - Registro de nuevos usuarios
+// POST /api/auth/register - Registro de nuevos usuarios (solo admin)
 import { db } from '@/lib/db'
 import { hashPassword, issueTokens } from '@/lib/auth'
-import { ok, fail, handleRouteError } from '@/lib/api-utils'
+import { requireAdmin, ok, fail, handleRouteError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_ROLES = ['admin', 'mesero', 'barra']
+const VALID_ROLES = ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor', 'mesa']
 
 export async function POST(req: Request) {
   try {
+    const auth = requireAdmin(req)
+    if ('error' in auth) return auth.error
+
     const body = await req.json().catch(() => null)
     if (!body || !body.email || !body.password || !body.name) {
       return fail('Nombre, email y contraseña son obligatorios', 422)
@@ -34,9 +37,8 @@ export async function POST(req: Request) {
     })
 
     const safe = { id: user.id, name: user.name, email: user.email, role: user.role }
-    const tokens = issueTokens(safe)
 
-    return ok({ user: safe, ...tokens }, 201)
+    return ok({ user: safe }, 201)
   } catch (err) {
     return handleRouteError(err)
   }

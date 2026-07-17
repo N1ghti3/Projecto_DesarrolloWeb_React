@@ -45,13 +45,15 @@ function Router() {
     )
   }
 
-  // Vista kiosk-unlock: SIEMPRE muestra el PIN pad (para "Abrir mesa" desde gestión)
+  // Vista kiosk-unlock: muestra el PIN pad para abrir mesa.
+  // Si hay usuario logueado (staff), tras abrir vuelve a tables.
+  // Si no (entrada directa sin auth), tras abrir va al kiosk.
   if (view.name === 'kiosk-unlock' && view.tableId) {
     return (
       <KioskUnlockView
         tableNumber={view.tableId}
         onBack={() => navigate(user ? { name: 'tables' } : { name: 'login' })}
-        onOpened={() => navigate({ name: 'kiosk', tableId: view.tableId })}
+        onOpened={() => navigate(user ? { name: 'tables' } : { name: 'kiosk', tableId: view.tableId })}
       />
     )
   }

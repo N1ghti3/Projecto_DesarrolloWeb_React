@@ -17,7 +17,7 @@ model User {
   email        String   @unique
   passwordHash String
   pin         String?  // PIN de 4 dígitos para acceso rápido en kiosk
-  role         String   @default("mesero") // admin | mesero | barra | cocina | cajero | visor
+  role         String   @default("mesero") // admin | mesero | barra | cocina | cajero | visor | mesa
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -86,6 +86,8 @@ model Order {
   notes         String    @default("")
   userId        String?
   source        String    @default("online") // online | contingencia
+  customerName  String?
+  customerEmail String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

@@ -3,7 +3,7 @@
 // Requiere PIN o JWT de staff.
 import { db } from '@/lib/db'
 import { verifyPin } from '@/lib/auth'
-import { requireStaff, ok, fail, handleRouteError, emitWsBroadcast } from '@/lib/api-utils'
+import { requireStaff, ok, fail, handleRouteError, emitWsBroadcast, checkRateLimit } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +17,11 @@ export async function POST(req: Request) {
     // Auth: PIN o JWT staff
     let userId: string | null = null
     if (body.pin) {
+      const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+      const rl = checkRateLimit(`pin:${ip}`, 5, 60000)
+      if (!rl.allowed) {
+        return fail('Demasiados intentos. Intenta de nuevo en un minuto.', 429)
+      }
       const u = await verifyPin(String(body.pin))
       if (!u) return fail('PIN inválido', 401)
       userId = u.id

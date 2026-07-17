@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_ROLES = ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor']
+const VALID_ROLES = ['admin', 'mesero', 'barra', 'cocina', 'cajero', 'visor', 'mesa']
 
 export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {

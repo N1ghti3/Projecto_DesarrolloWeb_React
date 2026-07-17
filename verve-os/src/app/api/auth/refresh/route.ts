@@ -1,6 +1,6 @@
 // POST /api/auth/refresh - Intercambia un refresh token por un nuevo access token
 import { db } from '@/lib/db'
-import { verifyRefreshToken, signAccessToken, JwtUser } from '@/lib/auth'
+import { verifyRefreshToken, issueTokens, JwtUser } from '@/lib/auth'
 import { ok, fail, handleRouteError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
@@ -32,8 +32,11 @@ export async function POST(req: Request) {
       role: user.role,
     }
 
-    // Emitimos un nuevo access token (el refresh token se mantiene hasta su expiración)
-    return ok({ accessToken: signAccessToken(safe), user: safe })
+    // Rotación: emitimos NUEVO access token + NUEVO refresh token
+    // El anterior refresh token JWT aún es válido hasta su expiración, pero el
+    // cliente lo descarta. Para invalidación total se requiere DB de tokens.
+    const tokens = issueTokens(safe)
+    return ok({ ...tokens, user: safe })
   } catch (err) {
     return handleRouteError(err)
   }

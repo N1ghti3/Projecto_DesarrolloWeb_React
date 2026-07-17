@@ -1,5 +1,5 @@
 // VerveOS - Tipos compartidos del frontend
-export type Role = 'admin' | 'mesero' | 'barra' | 'cocina' | 'cajero' | 'visor'
+export type Role = 'admin' | 'mesero' | 'barra' | 'cocina' | 'cajero' | 'visor' | 'mesa'
 
 export interface User {
   id: string
@@ -66,6 +66,8 @@ export interface Order {
   notes: string
   source: 'online' | 'contingencia'
   createdAt: string
+  customerName?: string | null
+  customerEmail?: string | null
   items: OrderItem[]
 }
 
@@ -121,6 +123,8 @@ export interface Bill {
   tax: number
   total: number
   grandTotal: number
+  customerName?: string | null
+  customerEmail?: string | null
 }
 
 // Item del carrito (cliente)
