@@ -1,0 +1,16 @@
+{
+  "name": "verveos-ws",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}

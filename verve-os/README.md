@@ -1,70 +1,118 @@
-# Getting Started with Create React App
+# VerveOS — POS para Gastro-Bar
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema POS pensado para gastro-bares. Permite gestionar pedidos, mesas, cocina, barra, usuarios y contingencia offline. Construido con Next.js 16, WebSocket en tiempo real, SQLite (Prisma) y arquitectura segura.
 
-## Available Scripts
+## Requisitos
 
-In the project directory, you can run:
+- Node.js >= 22
+- npm
 
-### `npm start`
+## Configuración inicial
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+# Instalar dependencias
+npm install
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+# Copiar variables de entorno
+cp .env.example .env
 
-### `npm test`
+# Generar Prisma client y crear la BD
+npx prisma generate
+npx prisma db push
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Poblar la base de datos con datos de demostración
+npx prisma db seed
+```
 
-### `npm run build`
+## Ejecutar
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Se necesitan dos terminales:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Terminal 1 — WebSocket** (gestión de pedidos en tiempo real):
+```bash
+npx tsx mini-services/verveos-ws/index.ts
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+**Terminal 2 — Next.js**:
+```bash
+npm run dev
+```
 
-### `npm run eject`
+La aplicación arranca en `http://localhost:3000`.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Credenciales de prueba
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| Rol | Email | Contraseña | PIN |
+|-----|-------|-----------|-----|
+| Admin | admin@verveos.com | admin123 | 1234 |
+| Mesero | mesero@verveos.com | mesero123 | 1111 |
+| Bartender | barra@verveos.com | barra123 | 3333 |
+| Cocina | cocina@verveos.com | cocina123 | 4444 |
+| Cajero | cajero@verveos.com | cajero123 | 5555 |
+| Supervisor | visor@verveos.com | visor123 | 6666 |
+| Mesa (test) | mesa01@verveos.com a mesa12@verveos.com | mesa123 | — |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+> Los PINs están hasheados con bcrypt (12 rounds) en el seed.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Funcionalidades
 
-## Learn More
+- **Roles** — Admin, Mesero, Cocina, Barra, Cajero, Supervisor, Mesa (cada uno ve su interfaz)
+- **Gestión de mesas** — Ocupar, liberar, combinar, ver cuenta, permisos por rol
+- **Pedidos** — Crear con datos del cliente (nombre/email), agregar items, enviar a estación correspondiente (cocina/barra)
+- **Estaciones** — Cocina y Barra reciben pedidos en tiempo real vía WebSocket
+- **Facturación** — Split de cuenta, imprimir ticket térmico, marcar como pagado, muestra datos del cliente
+- **Dashboard** — KPIs, ventas por día, top productos, por estación
+- **Usuarios** — CRUD completo con roles y PIN (solo admin puede registrar)
+- **Categorías** — CRUD con emoji y asignación a estación
+- **Menú** — CRUD de productos con disponibilidad y búsqueda
+- **Contingencia offline** — Modo sin conexión con cola de pedidos local
+- **Llamadas a mesero** — Notificaciones en tiempo real
+- **Kiosk mode** — Pantallas táctiles con autenticación por device token y cierre con PIN de staff
+- **Rol Mesa** — Usuarios de prueba que solo ven el módulo "Mesas" y pueden acceder a mesas ocupadas como cliente
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Arquitectura
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Seguridad
 
-### Code Splitting
+- **JWT con rotación**: Access + Refresh tokens. Los secrets se generan con `crypto.randomBytes(32)` sin fallback a valores por defecto
+- **PINs hasheados**: Almacenados con bcrypt (12 rounds), nunca expuestos en respuestas de API
+- **Rate limiting**: Login (10 intentos/min), verificación de PIN (5 intentos/min) por IP
+- **Error sanitization**: Los errores internos solo muestran `err.message` en desarrollo; en producción se ocultan
+- **WebSocket protegido**: Los eventos `__emit` y `__broadcast` requieren un `x-internal-secret` compartido
+- **Device tokens**: Generados con `crypto.randomBytes(32)`, permiten modo kiosko sin sesión persistente
+- **Registro protegido**: Solo usuarios con rol admin pueden crear nuevas cuentas
+- **Headers de seguridad**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Componentes
 
-### Analyzing the Bundle Size
+- **`useWebSocket`** — Hook singleton que mantiene una única conexión WebSocket compartida entre todas las vistas (TablesView, StationView, WaiterView, TableTopView)
+- **`useCart`** — Hook de carrito con persistencia local, operaciones de agregar/quitar/incrementar/decrementar/limpiar
+- **`MenuGrid`** — Grid de productos con búsqueda y filtro por categoría
+- **`CategorySidebar`** — Sidebar de categorías para filtrar productos
+- **`OrderStatusBar`** — Barra superior que muestra los pedidos activos de la mesa con estados
+- **`CartSheet`** — Sheet lateral del carrito con resumen, notas, controles de cantidad y checkout
+- **`KioskDialogs`** — Diálogos reutilizables: confirmación de pedido, datos del cliente, PIN de staff para cerrar mesa
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### WebSocket
 
-### Making a Progressive Web App
+- Servicio independiente en `mini-services/verveos-ws/index.ts` (puerto 3003)
+- Comunicación con Next.js mediante `WS_INTERNAL_SECRET` compartido
+- Eventos: `table-orders`, `order:new`, `order:status`, `waiter:call`, `waiter:attend`, `request:table-orders`, `join:table`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Refresh token rotation
 
-### Advanced Configuration
+- Cada vez que se refresca un token, se genera un nuevo refresh token y se invalida el anterior
+- El cliente almacena tanto access como refresh token y los actualiza tras cada refresh
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Limitaciones actuales
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Base de datos**: SQLite (no recomendado para producción con alta concurrencia. Migrar a PostgreSQL o Supabase)
+- **Impresión de tickets**: Abre una ventana del navegador con formato térmico. No hay integración directa con impresoras Bluetooth/USB
+- **Pagos electrónicos**: No integra pasarela de pago (Stripe, Mercado Pago, etc.). Solo registro de pago manual (efectivo/tarjeta/transferencia)
+- **WebSocket**: Servicio separado que debe ejecutarse manualmente. Sin auto-arranque ni gestión de procesos (PM2, systemd)
+- **Multi-tenant**: No soporta múltiples locales/vendedores
+- **Internacionalización**: Solo español, sin soporte multi-idioma
+- **Tests**: No hay suite de tests automatizados
+- **Despliegue**: No hay configuración Docker ni scripts de deploy automatizado
+- **Caché de menú**: Implementación básica en memoria, se pierde al reiniciar el servidor
+- **Responsive**: Optimizado para tablets/kioskos. Algunas vistas no están adaptadas para móviles pequeños

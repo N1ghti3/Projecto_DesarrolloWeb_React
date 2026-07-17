@@ -1,0 +1,144 @@
+// VerveOS - Schema de base de datos
+// Sistema POS / gastro-bar
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Usuarios del sistema (meseros, admin, barra, cocina)
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  pin         String?  // PIN de 4 dígitos para acceso rápido en kiosk
+  role         String   @default("mesero") // admin | mesero | barra | cocina | cajero | visor | mesa
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders        Order[]
+  sessions      DeviceSession[]
+  notifications WaiterCall[]
+}
+
+/// Sesión de dispositivo kiosk abierta en una mesa.
+/// Permite que el cliente use la tablet sin login: el staff abre la mesa
+/// con su PIN y se genera un token de dispositivo.
+model DeviceSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  tableId   String
+  userId    String?  // mesero que abrió la mesa
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+/// Mesas con ciclo de vida: libre | ocupada | cobrada
+model Table {
+  id        String   @id @default(cuid())
+  number    String   @unique // "M5"
+  name      String?  // "Mesa terraza 5"
+  status    String   @default("libre") // libre | ocupada | cobrada
+  capacity  Int      @default(4)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+}
+
+/// Productos del menú del restaurante
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  price       Float
+  category    String   @default("General")
+  station     String   @default("cocina") // cocina | barra (estación de preparación)
+  stock       Int      @default(0)
+  imageUrl    String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+/// Pedidos realizados desde las mesas. Una mesa puede tener varios pedidos
+/// que acumulan en una cuenta abierta (status != pagado).
+model Order {
+  id            String    @id @default(cuid())
+  tableId       String
+  status        String    @default("pendiente") // pendiente | en_preparacion | listo | entregado | cancelado | pagado
+  total         Float     @default(0) // subtotal (base sin IVA)
+  tax           Float     @default(0) // IVA calculado
+  tip           Float     @default(0)
+  paymentMethod String?   // efectivo | tarjeta | transferencia
+  paidAt        DateTime?
+  notes         String    @default("")
+  userId        String?
+  source        String    @default("online") // online | contingencia
+  customerName  String?
+  customerEmail String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  table Table?      @relation(fields: [tableId], references: [id])
+  items OrderItem[]
+}
+
+/// Items individuales de cada pedido. Cada item tiene su propio estado
+/// de preparación para que cocina/barra marquen independientemente.
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float
+  notes     String @default("")
+  status    String @default("pendiente") // pendiente | en_preparacion | listo | cancelado
+  station   String @default("cocina") // cocina | barra
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+/// Llamados de mesero desde el kiosk de una mesa
+model WaiterCall {
+  id        String   @id @default(cuid())
+  tableId   String
+  reason    String   @default("mesero") // mesero | cuenta | ayuda
+  status    String   @default("pendiente") // pendiente | atendido
+  userId    String?
+  createdAt DateTime @default(now())
+  attendedAt DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+/// Categorías de productos
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  emoji     String   @default("🍽️")
+  station   String   @default("cocina") // cocina | barra
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Configuración global del establecimiento (IVA, nombre, etc.)
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
